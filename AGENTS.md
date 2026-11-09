@@ -11,20 +11,23 @@
 
 ---
 
-## 2. Experimental Design ($3 \times 3$ or $4 \times 3$ Factorial Design)
+## 2. Experimental Design ($3 \times 3$ Within-Subjects Factorial Design)
 
-### Factor A: Feedback Modality (3 or 4 levels)
-1. **Haptic Feedback:** Controller vibration (Meta Quest Touch Plus controllers).
-2. **Visual Feedback:** Pulsating screen (vignette/shader) or pulsating heart icon in VR.
-3. **Audio Feedback:** Heartbeat sound (lub-dub audio trigger).
-4. **Multimodal / Combined *(optional 4th level)*:** Haptic + Visual + Audio simultaneously.
+> **Decided Concept (Variant B):** Modality $\times$ Heart Rate Frequency Manipulation.
+> **Discarded Alternative:** Simulated running / locomotion in VR was rejected due to high risk of severe cybersickness and emesis (nausea), avoiding sensory-vestibular confounds.
+
+### Factor A: Feedback Modality (3 levels)
+1. **Visual Feedback:** Pulsating heart icon on the VR HUD (expanding/fading based on Fink et al., 2026).
+2. **Audio Feedback:** Naturalistic low-frequency heartbeat sound (lub-dub stereo cue).
+3. **Haptic Feedback:** Dual-pulse vibrotactile feedback (Meta Quest Touch Plus LRA controller vibration).
+*(Note: Combined/Multimodal condition "ALL" excluded from main factorial matrix to keep participant session under 40 minutes).*
 
 ### Factor B: Heart Rate Frequency Manipulation (3 levels)
-1. **Slower:** Decelerated feedback relative to true HR (exact percentage/BPM offset TBD, e.g., $-20\%$).
-2. **Real:** Actual heart rate feedback (true HR / synchronous).
-3. **Faster:** Accelerated feedback relative to true HR (exact percentage/BPM offset TBD, e.g., $+20\%$).
+1. **Slower (-20%):** Decelerated feedback at $0.80 \times \text{instantaneous HR}$.
+2. **Real (0%):** Phase-locked, zero-drift real-time feedback triggered directly by actual ECG R-peaks.
+3. **Faster (+20%):** Accelerated feedback at $1.20 \times \text{instantaneous HR}$.
 
-- **Total Conditions:** 9 conditions ($3 \times 3$) or 12 conditions ($4 \times 3$).
+- **Total Conditions:** 9 conditions ($3 \times 3$), balanced via Latin Square.
 
 ---
 
@@ -32,24 +35,23 @@
 - **Host System:** macOS 26.6.2 (25G83) on Apple Silicon (M2).
 - **VR Headset:** Meta Quest 3S (referred to as Meta Vision 3 S) + Quest Touch Plus Controllers.
 - **Physiological Sensor:** Polar H10 chest strap (ECG, Heart Rate in BPM, RR-intervals in ms via Bluetooth Low Energy / BLE).
+- **Quest 3S Deployment Pipeline:** Unity standalone Android APK on Quest 3S receiving wireless UDP packets from the Mac Python bridge over local 5 GHz Wi-Fi / hotspot (port `5005`).
 
 ---
 
-## 4. Open Decisions & Status Tracker (To Be Defined)
-- [ ] **Design Type:** Within-Subjects vs. Mixed Design (3 vs. 4 modalities, block randomization, counterbalancing / Latin Square).
-- [ ] **Manipulation Magnitude:** Percentage (e.g., $\pm 15\%$ / $\pm 20\%$) vs. fixed BPM offset, and whether "Real" is R-peak locked or rolling-average BPM.
-- [ ] **Trial & Washout Timing:** Duration of baseline, stimulus exposure per condition, and rest/washout period between trials.
-- [ ] **Dependent Variables (DVs):**
-  - Physiological: Actual HR change ($\Delta\text{HR}$), HRV metrics (RMSSD, SDNN).
-  - Subjective: Questionnaires (e.g., SAM for valence/arousal, perceived stress, manipulation check / interoceptive awareness).
-  - Task/Scenario in VR: Passive resting environment vs. active task / stressor.
-- [x] **Technical Stack:**
-  - **Game Engine:** Unity 6.3 LTS (`6000.3.28f1`) with Meta XR SDK, project located in `VR Template/` (`/Users/Jonah/Documents/antigravity/cool-pythagoras/VR Template`).
-  - **Unity CLI & MCP Integration:** Bound via `unity mcp --project-path "/Users/Jonah/Documents/antigravity/cool-pythagoras/VR Template"` (`com.unity.pipeline` package active in Editor).
-  - **Polar H10 Connection Architecture:** Mac Python BLE Bridge (`bleak` / CoreBluetooth in `polar-ble-bridge/polar_udp_bridge.py`, launched via `Start_Polar_H10.command`) streaming low-latency JSON packets via UDP (Port `5005`) to Unity (`VR Template/Assets/Scripts/HeartRate/PolarUDPReceiver.cs` & `HeartRateDebugUI.cs`):
-    - **Standard GATT (`0x2A37` & `0x2A19`):** Heart Rate (BPM), RR-intervals (ms, $1/1024\,\text{s}$ resolution), skin contact status, and battery level (%).
-    - **Polar PMD Service (`FB005C80`):** 130 Hz Raw ECG ($\mu\text{V}$) with real-time QRS / R-Peak detection (`r_peak` trigger) for phase-locked, zero-drift `Real` heartbeat feedback and live ECG oscilloscope rendering in Unity.
-    - **Live HRV Computation:** Rolling time-domain HRV metrics (`RMSSD` in ms, `SDNN` in ms, `pNN50` in %).
+## 4. Decisions & Status Tracker
+- [x] **Design Type:** Within-Subjects $3 \times 3$ factorial design, counterbalanced via balanced Latin Square ($N = 20\text{--}24$).
+- [x] **Manipulation Magnitude:** $\pm 20\%$ offset. "Real" is phase-locked to QRS R-peaks from raw ECG.
+- [x] **Trial & Washout Timing:** Trial-Specific Baseline Design (per condition: 30 s pre-stimulus baseline -> 180 s stimulus exposure -> 45–60 s washout & in-VR survey). Total session $\approx 45\text{--}50$ min ($9 \times 4.5$ min).
+- [x] **Dependent Variables (DVs):**
+  - Physiological: $\Delta\text{HR}$ (BPM shift vs. baseline), HRV metrics (RMSSD, SDNN).
+  - Subjective: 2AFC discrimination ("Did it match your heartbeat?"), Perceived HR visual slider (30–140 BPM), SAM (Valence & Arousal), short SSQ/FMS.
+  - Task/Scenario in VR: Seated/standing passive observation in a serene, neutral nature environment (no locomotion).
+- [x] **Technical Stack & Architecture:** Fully documented in [Google Doc Specification](https://docs.google.com/document/d/1dHm4Yygn9Af6Jc8HSLo8wOU_TzT_wBg1wsY2C96ijOU/edit).
+  - **Game Engine:** Unity 6.3 LTS (`6000.3.28f1`) with Meta XR SDK in `VR Template/`.
+  - **Polar H10 Connection Architecture:** Mac Python BLE Bridge (`bleak` / CoreBluetooth) streaming low-latency JSON packets via UDP (`5005`) to Unity:
+    - 130 Hz Raw ECG with real-time Pan-Tompkins QRS R-Peak detector (`r_peak` trigger).
+    - Standard GATT HR & RR-intervals with rolling RMSSD/SDNN metrics.
 
 ---
 
